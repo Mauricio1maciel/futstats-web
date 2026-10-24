@@ -326,3 +326,52 @@ export type TeamCards = {
 
 // /match/commentary: narração lance a lance, do mais recente para o mais antigo
 export type CommentaryItem = { seq: number; minute: string; text: string; type?: string; team?: string };
+
+// /match/preview: tudo o que se olha antes do jogo
+export type PreviewTeam = {
+  team_id: number;
+  name: string;
+  crest_url?: string;
+  /** Na tabela da competição (0 ou ausente = sem tabela) */
+  position?: number;
+  points?: number;
+  played?: number;
+  group_name?: string;
+  /** Últimos 5 na competição, do mais antigo ao mais recente */
+  form?: string;
+  /** Só Séries A e B (nas outras, vazias) */
+  suspended: CardPlayer[];
+  hanging: CardPlayer[];
+  top_scorers: { player_id: number; name: string; headshot_url?: string; goals: number }[];
+};
+
+export type MatchPreviewData = {
+  match: Match;
+  probabilities?: {
+    home_win: number;
+    draw: number;
+    away_win: number;
+    expected_home_goals: number;
+    expected_away_goals: number;
+    likely_scores: { home: number; away: number; pct: number }[];
+    based_on_matches: number;
+  };
+  home: PreviewTeam;
+  away: PreviewTeam;
+  /** Do ponto de vista do mandante deste jogo, em qualquer competição */
+  h2h: { played: number; home_wins: number; draws: number; away_wins: number; last: Match[] };
+};
+
+// /match/videos: gols, melhores momentos e entrevistas (ESPN Brasil)
+export type MatchVideo = {
+  id: string;
+  title: string;
+  duration_seconds: number;
+  thumbnail?: string;
+  hls_url?: string;
+  mp4_url?: string;
+  web_url?: string;
+  published_at?: string;
+  /** Melhores momentos ou compilação dos gols */
+  highlights: boolean;
+};

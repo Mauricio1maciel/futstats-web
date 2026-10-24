@@ -1,14 +1,23 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { hasChances } from '@/config/leagues';
+import { hasChances, isCupLeague } from '@/config/leagues';
 import { LazyPanel } from '@/components/ui/LazyPanel';
 import { Pills } from '@/components/ui/Pills';
 import { useRememberedState, type ScreenMemory } from '@/hooks/useScreenMemory';
 import { ChancesPanel } from './ChancesPanel';
-import { StandingsSection } from './StandingsSection';
+import { StandingsSection, type StandingsView } from './StandingsSection';
 
 type View = 'table' | 'chances';
+type Cut = 'all' | StandingsView;
+
+const CUTS: { value: Cut; label: string }[] = [
+  { value: 'all', label: 'Geral' },
+  { value: 'home', label: 'Mandante' },
+  { value: 'away', label: 'Visitante' },
+  { value: 'first', label: '1º turno' },
+  { value: 'second', label: '2º turno' },
+];
 
 type Props = {
   league: string;
@@ -31,6 +40,16 @@ export function LeagueStandings({ league, season = '', isCurrentSeason = true, a
   const withChances = hasChances(league) && !unavailable;
   const current = withChances ? view : 'table';
 
+  // Recortes (só pontos corridos; copa dá 404): Geral | Mandante | Visitante | 1º turno | 2º turno
+  const [savedCut, setCut] = useRememberedState<Cut>(memory, `standings-cut:${league}`, 'all');
+  const [cutsOff, setCutsOff] = useState(false);
+  const onCutUnavailable = useCallback(() => {
+    setCutsOff(true);
+    setCut('all');
+  }, [setCut]);
+  const withCuts = !isCupLeague(league) && !cutsOff;
+  const cut = withCuts ? savedCut : 'all';
+
   return (
     <div>
       {withChances && (
@@ -47,7 +66,17 @@ export function LeagueStandings({ league, season = '', isCurrentSeason = true, a
         />
       )}
       <LazyPanel active={current === 'table'}>
-        <StandingsSection league={league} season={season} isCurrentSeason={isCurrentSeason} active={active && current === 'table'} refreshSignal={refreshSignal} />
+        {withCuts && <Pills value={cut} onChange={setCut} options={CUTS} className="-mx-2.5 mb-3 px-2.5" label="Recorte da tabela" />}
+        <StandingsSection
+          key={cut}
+          league={league}
+          view={cut === 'all' ? undefined : cut}
+          onViewUnavailable={onCutUnavailable}
+          season={season}
+          isCurrentSeason={isCurrentSeason}
+          active={active && current === 'table'}
+          refreshSignal={refreshSignal}
+        />
       </LazyPanel>
       {withChances && (
         <LazyPanel active={current === 'chances'}>

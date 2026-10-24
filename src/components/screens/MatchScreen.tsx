@@ -4,14 +4,15 @@ import { RotateCw, SearchX } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getLeagueName, getTableLabel, hasStandingsTable, hasTeamCards, isCupLeague } from '@/config/leagues';
+import { getLeagueName, getTableLabel, hasStandingsTable, isCupLeague } from '@/config/leagues';
 import { FollowStar } from '@/components/FollowStar';
 import { HeadToHead } from '@/components/match/HeadToHead';
 import { MatchCommentary } from '@/components/match/MatchCommentary';
 import { MatchHeader } from '@/components/match/MatchHeader';
 import { MatchLineups } from '@/components/match/MatchLineups';
 import { MatchStats } from '@/components/match/MatchStats';
-import { MatchSuspensions } from '@/components/match/MatchSuspensions';
+import { MatchPreview } from '@/components/match/MatchPreview';
+import { MatchVideos } from '@/components/match/MatchVideos';
 import { MatchTimeline } from '@/components/match/MatchTimeline';
 import { StandingsSection } from '@/components/standings/StandingsSection';
 import { LazyPanel } from '@/components/ui/LazyPanel';
@@ -21,6 +22,7 @@ import { NotFoundState } from '@/components/ui/ScreenFallback';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/States';
 import { IconButton, TopBar } from '@/components/ui/TopBar';
+import { useApi } from '@/hooks/useApi';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useInterval } from '@/hooks/useInterval';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
@@ -31,11 +33,12 @@ import { parseMatchDate, toDateKey } from '@/lib/dates';
 import { pickClock, type LiveClockData } from '@/lib/liveClock';
 import { getEspnMatchId, getPhaseLabel, hasPenalties, isFinishedMatch, isLiveMatch } from '@/lib/matches';
 import { getPreview } from '@/lib/preview';
-import { asArray, type Match, type MatchHistory } from '@/lib/types';
+import { asArray, type Match, type MatchHistory, type MatchPreviewData, type MatchVideo } from '@/lib/types';
 
 const LIVE_REFRESH_MS = 30000;
+const VIDEOS_REFRESH_MS = 5 * 60 * 1000;
 
-type Tab = 'detalhes' | 'lances' | 'estatisticas' | 'escalacao' | 'confronto' | 'tabela';
+type Tab = 'detalhes' | 'videos' | 'lances' | 'estatisticas' | 'escalacao' | 'confronto' | 'tabela';
 
 type RouteParams = {
   id: string;
@@ -158,6 +161,21 @@ function MatchScreen(params: RouteParams) {
 
   const live = isLiveMatch(match);
   const finished = isFinishedMatch(match);
+  const started = live || finished;
+
+  // Prévia (/match/preview) na aba Detalhes, só antes do apito: pelo ID do banco, ou o da ESPN
+  const previewEndpoint =
+    match && !started ? buildEndpoint('/match/preview', params.dbMatchId ? { match_id: params.dbMatchId } : { id }) : null;
+  const previewQuery = useApi<MatchPreviewData>(previewEndpoint);
+  const matchPreview = !started && previewQuery.data?.home && previewQuery.data?.away ? previewQuery.data : null;
+
+  // Vídeos (/match/videos): antes do jogo vêm vazios. Busca ao abrir e, com a tela aberta, a cada
+  // 5 min (chegam vídeos novos durante o jogo e nas horas seguintes). A aba só aparece com vídeo
+  const videosQuery = useApi(hasEspnId && started ? buildEndpoint('/match/videos', { id }) : null, {
+    parse: raw => asArray<MatchVideo>(raw),
+  });
+  const videos = videosQuery.data ?? [];
+  useInterval(() => videosQuery.refresh(), hasEspnId && started ? VIDEOS_REFRESH_MS : null);
 
   // Abertura: history (cópia local na hora). Sem history (jogo sem vínculo com a ESPN, 404),
   // procura o jogo na lista do dia para mostrar ao menos os times e o horário
@@ -245,6 +263,8 @@ function MatchScreen(params: RouteParams) {
     if (live) await fetchLive();
     if (tab === 'tabela') setStandingsSignal(n => n + 1);
     if (tab === 'lances') setCommentarySignal(n => n + 1);
+    if (started && hasEspnId) videosQuery.refresh();
+    if (!started) previewQuery.refresh({ nocache: 'true' });
     setRefreshing(false);
   };
 
@@ -274,6 +294,7 @@ function MatchScreen(params: RouteParams) {
   const hasStandings = hasStandingsTable(league);
   const tabs: { value: Tab; label: string }[] = [
     { value: 'detalhes', label: 'Detalhes' },
+    ...(videos.length > 0 ? [{ value: 'videos' as const, label: 'Vídeos' }] : []),
     ...(hasEspnId && !commentaryOff ? [{ value: 'lances' as const, label: 'Lance a lance' }] : []),
     { value: 'estatisticas', label: 'Estatísticas' },
     { value: 'escalacao', label: 'Escalação' },
@@ -319,18 +340,27 @@ function MatchScreen(params: RouteParams) {
       </div>
 
       <div className="pb-10">
-        {activeTab === 'detalhes' && match && !finished && hasTeamCards(league) && (
-          <MatchSuspensions match={match} league={league} dbMatchId={params.dbMatchId || undefined} />
-        )}
         {activeTab === 'detalhes' &&
-          (waiting ? <TimelineSkeleton /> : <MatchTimeline events={history?.events ?? []} homeEspnId={match?.espn_home_team_id} />)}
+          (matchPreview ? (
+            <MatchPreview data={matchPreview} league={league} />
+          ) : waiting || (!started && previewQuery.loading) ? (
+            <TimelineSkeleton />
+          ) : (
+            <MatchTimeline events={history?.events ?? []} homeEspnId={match?.espn_home_team_id} />
+          ))}
+
+        {videos.length > 0 && (
+          <LazyPanel active={activeTab === 'videos'}>
+            <MatchVideos videos={videos} />
+          </LazyPanel>
+        )}
 
         {hasEspnId && !commentaryOff && (
           <LazyPanel active={activeTab === 'lances'}>
             <MatchCommentary
               espnId={id}
               live={live}
-              started={live || finished}
+              started={started}
               active={activeTab === 'lances'}
               refreshSignal={commentarySignal}
               onUnavailable={hideCommentary}

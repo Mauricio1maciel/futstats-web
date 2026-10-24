@@ -14,14 +14,16 @@ export type FollowTarget =
   | { type: 'league'; league: string }
   | { type: 'match'; matchId?: string | number; espnMatchId?: string | number };
 
-export const PUSH_KINDS = ['lineup', 'start', 'goal', 'red_card', 'end'] as const;
+export const PUSH_KINDS = ['lineup', 'start', 'goal', 'penalty', 'red_card', 'halftime', 'end'] as const;
 export type PushKind = (typeof PUSH_KINDS)[number];
 
 export const KIND_LABELS: Record<string, string> = {
   lineup: 'Escalação',
   start: 'Início',
   goal: 'Gols e gols anulados',
+  penalty: 'Pênaltis (VAR, perdidos e disputa)',
   red_card: 'Cartão vermelho',
+  halftime: 'Intervalo',
   end: 'Fim de jogo',
 };
 

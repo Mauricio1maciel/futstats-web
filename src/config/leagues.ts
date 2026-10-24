@@ -36,6 +36,8 @@ export type LeagueConfig = {
   hasStandings?: boolean;
   /** Legenda própria de liga de pontos corridos */
   leagueLegend?: LegendItem[];
+  /** Tem pendurados e suspensos (/team/cards)? */
+  hasCards?: boolean;
 };
 
 export const ZONE_COLORS = {
@@ -86,6 +88,7 @@ export const LEAGUES: LeagueConfig[] = [
     code: 'BSA',
     name: 'Brasileirão - Série A',
     icon: '🇧🇷',
+    hasCards: true,
     // No app esta legenda era um if (league === 'BSA') nas telas; aqui ela vem do cadastro
     leagueLegend: [
       { color: ZONE_COLORS.qualified, label: 'Libertadores' },
@@ -98,6 +101,7 @@ export const LEAGUES: LeagueConfig[] = [
     code: 'BSB',
     name: 'Brasileirão - Série B',
     icon: '🇧🇷',
+    hasCards: true,
     leagueLegend: [
       { color: ZONE_COLORS.promotion, label: 'Acesso à Série A' },
       { color: ZONE_COLORS.playoff, label: 'Playoff de acesso' },
@@ -232,6 +236,9 @@ export const hasStandingsTable = (code: unknown) => getLeague(code)?.hasStanding
 // grupos (Copa do Mundo, Libertadores) e Liga das Nações dão 404
 export const hasChances = (code: unknown) =>
   hasStandingsTable(code) && (!isCupLeague(code) || !!getLeague(code)?.phases?.some(p => p.key === 'LEAGUE_STAGE'));
+
+// Pendurados e suspensos (/team/cards): por enquanto, Séries A e B
+export const hasTeamCards = (code: unknown) => !!getLeague(code)?.hasCards;
 
 // Nome de uma zona (valor de zone da /standings) igual ao da legenda da tabela, pela cor
 export function getZoneLabel(code: unknown, zone: string) {

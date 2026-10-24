@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 
 export type PillOption<T extends string> = { value: T; label: ReactNode };
 
@@ -14,10 +14,31 @@ type Props<T extends string> = {
   label?: string;
 };
 
+// Barra que rola para o lado: no notebook, a rodinha do mouse (que só rola para baixo) rola a barra.
+// Chegou na ponta, a rodinha volta a rolar a página
+function useWheelScrollX<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const onWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaX) > Math.abs(event.deltaY) || el.scrollWidth <= el.clientWidth) return;
+      const max = el.scrollWidth - el.clientWidth;
+      if ((event.deltaY < 0 && el.scrollLeft <= 0) || (event.deltaY > 0 && el.scrollLeft >= max - 1)) return;
+      el.scrollLeft += event.deltaY;
+      event.preventDefault();
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+  return ref;
+}
+
 // Abas/botões em pílula, com rolagem horizontal quando não cabem
 export function Pills<T extends string>({ options, value, onChange, variant = 'soft', className = '', label }: Props<T>) {
+  const ref = useWheelScrollX<HTMLDivElement>();
   return (
-    <div role="tablist" aria-label={label} className={`no-scrollbar flex gap-2 overflow-x-auto ${className}`}>
+    <div ref={ref} role="tablist" aria-label={label} className={`no-scrollbar flex gap-2 overflow-x-auto ${className}`}>
       {options.map(option => {
         const active = option.value === value;
         const style =
@@ -56,8 +77,9 @@ type UnderlineProps<T extends string> = {
 
 // Abas com sublinhado azul (AO VIVO / TODOS JOGOS, TEMPORADA / ELENCO, abas do jogo)
 export function UnderlineTabs<T extends string>({ options, value, onChange, stretch = false, className = '' }: UnderlineProps<T>) {
+  const ref = useWheelScrollX<HTMLDivElement>();
   return (
-    <div role="tablist" className={`no-scrollbar flex overflow-x-auto border-b border-line ${className}`}>
+    <div ref={ref} role="tablist" className={`no-scrollbar flex overflow-x-auto border-b border-line ${className}`}>
       {options.map(option => {
         const active = option.value === value;
         return (

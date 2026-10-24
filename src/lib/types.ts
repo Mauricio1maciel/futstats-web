@@ -297,3 +297,32 @@ export type StandingsChances = {
   zones: string[];
   teams: ChancesTeam[];
 };
+
+// /team/cards: pendurados e suspensos do time (Séries A e B)
+export type CardPlayer = {
+  name: string;
+  espn_player_id?: number;
+  /** Só os amarelos que valem para o acúmulo */
+  yellow_cards: number;
+  red_cards: number;
+  status?: 'suspended' | 'hanging' | string;
+  /** "3º amarelo", "6º amarelo", "cartão vermelho" */
+  reason?: string;
+};
+
+export type TeamCards = {
+  team_id: number;
+  league: string;
+  season: string;
+  yellows_for_suspension: number;
+  matches_counted: number;
+  /** Jogos encerrados sem os lances da ESPN: a lista pode estar incompleta */
+  matches_without_data: number;
+  next_match: { match_id: number; date: string; opponent: string; home: boolean } | null;
+  suspended: CardPlayer[];
+  hanging: CardPlayer[];
+  players: CardPlayer[];
+};
+
+// /match/commentary: narração lance a lance, do mais recente para o mais antigo
+export type CommentaryItem = { seq: number; minute: string; text: string; type?: string; team?: string };

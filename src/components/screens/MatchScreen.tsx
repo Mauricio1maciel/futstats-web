@@ -4,12 +4,14 @@ import { RotateCw, SearchX } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getLeagueName, getTableLabel, hasStandingsTable, isCupLeague } from '@/config/leagues';
+import { getLeagueName, getTableLabel, hasStandingsTable, hasTeamCards, isCupLeague } from '@/config/leagues';
 import { FollowStar } from '@/components/FollowStar';
 import { HeadToHead } from '@/components/match/HeadToHead';
+import { MatchCommentary } from '@/components/match/MatchCommentary';
 import { MatchHeader } from '@/components/match/MatchHeader';
 import { MatchLineups } from '@/components/match/MatchLineups';
 import { MatchStats } from '@/components/match/MatchStats';
+import { MatchSuspensions } from '@/components/match/MatchSuspensions';
 import { MatchTimeline } from '@/components/match/MatchTimeline';
 import { StandingsSection } from '@/components/standings/StandingsSection';
 import { LazyPanel } from '@/components/ui/LazyPanel';
@@ -33,7 +35,7 @@ import { asArray, type Match, type MatchHistory } from '@/lib/types';
 
 const LIVE_REFRESH_MS = 30000;
 
-type Tab = 'detalhes' | 'estatisticas' | 'escalacao' | 'confronto' | 'tabela';
+type Tab = 'detalhes' | 'lances' | 'estatisticas' | 'escalacao' | 'confronto' | 'tabela';
 
 type RouteParams = {
   id: string;
@@ -123,6 +125,11 @@ function MatchScreen(params: RouteParams) {
   const [tab, setTab] = useRememberedState<Tab>(memory, 'aba', 'detalhes');
   const [side, setSide] = useRememberedState<'home' | 'away'>(memory, 'time', 'home');
   const [standingsSignal, setStandingsSignal] = useState(0);
+  const [commentarySignal, setCommentarySignal] = useState(0);
+  // Lance a lance: só com o ID da ESPN; some se a rota responder 404
+  const [commentaryOff, setCommentaryOff] = useState(false);
+  const hideCommentary = useCallback(() => setCommentaryOff(true), []);
+  const hasEspnId = !(params.dbMatchId && id === params.dbMatchId);
 
   const historyEndpoint = buildEndpoint('/match/history', { id, league });
 
@@ -237,6 +244,7 @@ function MatchScreen(params: RouteParams) {
     }
     if (live) await fetchLive();
     if (tab === 'tabela') setStandingsSignal(n => n + 1);
+    if (tab === 'lances') setCommentarySignal(n => n + 1);
     setRefreshing(false);
   };
 
@@ -266,6 +274,7 @@ function MatchScreen(params: RouteParams) {
   const hasStandings = hasStandingsTable(league);
   const tabs: { value: Tab; label: string }[] = [
     { value: 'detalhes', label: 'Detalhes' },
+    ...(hasEspnId && !commentaryOff ? [{ value: 'lances' as const, label: 'Lance a lance' }] : []),
     { value: 'estatisticas', label: 'Estatísticas' },
     { value: 'escalacao', label: 'Escalação' },
     { value: 'confronto', label: 'Confronto' },
@@ -310,8 +319,24 @@ function MatchScreen(params: RouteParams) {
       </div>
 
       <div className="pb-10">
+        {activeTab === 'detalhes' && match && !finished && hasTeamCards(league) && (
+          <MatchSuspensions match={match} league={league} dbMatchId={params.dbMatchId || undefined} />
+        )}
         {activeTab === 'detalhes' &&
           (waiting ? <TimelineSkeleton /> : <MatchTimeline events={history?.events ?? []} homeEspnId={match?.espn_home_team_id} />)}
+
+        {hasEspnId && !commentaryOff && (
+          <LazyPanel active={activeTab === 'lances'}>
+            <MatchCommentary
+              espnId={id}
+              live={live}
+              started={live || finished}
+              active={activeTab === 'lances'}
+              refreshSignal={commentarySignal}
+              onUnavailable={hideCommentary}
+            />
+          </LazyPanel>
+        )}
 
         {activeTab === 'estatisticas' &&
           (waiting ? <TimelineSkeleton /> : <MatchStats statistics={history?.statistics ?? []} homeName={homeName} awayName={awayName} />)}

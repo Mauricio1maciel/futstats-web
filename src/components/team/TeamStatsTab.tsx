@@ -4,6 +4,7 @@ import { BarChart3, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { getLeague } from '@/config/leagues';
+import { TeamCardsSection } from './TeamCardsSection';
 import { formatStatValue } from '@/components/match/MatchStats';
 import { Crest } from '@/components/ui/Crest';
 import { RefreshBar } from '@/components/ui/RefreshBar';
@@ -159,8 +160,28 @@ function CompetitionBlock({ stats }: { stats: TeamCompetitionStats }) {
   );
 }
 
-// Estatísticas do time na temporada (/team/stats), um bloco por competição
-export function TeamStatsTab({ teamId, refreshSignal }: { teamId: string; refreshSignal: number }) {
+type Props = {
+  teamId: string;
+  refreshSignal: number;
+  /** Competições com pendurados e suspensos (Séries A e B): uma seção "Cartões" para cada */
+  cardLeagues?: string[];
+  teamName?: string;
+};
+
+// Estatísticas do time na temporada (/team/stats), um bloco por competição, e os cartões
+// (pendurados e suspensos) nas competições que têm
+export function TeamStatsTab({ teamId, refreshSignal, cardLeagues = [], teamName }: Props) {
+  return (
+    <>
+      {cardLeagues.map(league => (
+        <TeamCardsSection key={league} teamId={teamId} league={league} teamName={teamName} refreshSignal={refreshSignal} />
+      ))}
+      <TeamSeasonStats teamId={teamId} refreshSignal={refreshSignal} />
+    </>
+  );
+}
+
+function TeamSeasonStats({ teamId, refreshSignal }: { teamId: string; refreshSignal: number }) {
   const { data, loading, error, refreshing, refresh } = useApi<TeamStats>(buildEndpoint('/team/stats', { id: teamId }));
   useOnSignal(refreshSignal, () => refresh({ nocache: 'true' }));
 

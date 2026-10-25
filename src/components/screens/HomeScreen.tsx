@@ -197,11 +197,18 @@ export function HomeScreen() {
 
   const sentinel = useInfiniteScroll(() => loadMore('next'), tab === 'all' && !loading && dates.length > 0 && !failed);
 
-  const sections = useMemo(() => dates.map(date => buildDay(date, byDate[date] || [])), [dates, byDate]);
+  // Aba Ao vivo: o jogo ao vivo que já está em "Meus jogos" não se repete aqui embaixo
+  const [followedLive, setFollowedLive] = useState<string[]>([]);
+  const sections = useMemo(() => {
+    const skip = new Set(tab === 'live' ? followedLive : []);
+    return dates.map(date => buildDay(date, (byDate[date] || []).filter(m => !skip.has(getEspnMatchId(m)))));
+  }, [dates, byDate, tab, followedLive]);
   const total = sections.reduce((sum, day) => sum + day.groups.reduce((n, g) => n + g.matches.length, 0), 0);
+  // Contando também os que foram para "Meus jogos": é o que diz se há jogo rolando
+  const allTotal = dates.reduce((sum, date) => sum + (byDate[date]?.length ?? 0), 0);
 
   // Ao vivo: 15 s com jogo rolando, 60 s sem. Parado com a aba escondida; na volta, recarrega na hora
-  useInterval(() => loadInitial(true), tab === 'live' && !loading ? (total > 0 ? LIVE_REFRESH_MS : IDLE_REFRESH_MS) : null, {
+  useInterval(() => loadInitial(true), tab === 'live' && !loading ? (allTotal > 0 ? LIVE_REFRESH_MS : IDLE_REFRESH_MS) : null, {
     runOnReturn: true,
   });
 
@@ -227,7 +234,7 @@ export function HomeScreen() {
   };
 
   const noFavorites = favorites !== null && favorites.length === 0;
-  const showLiveEmpty = tab === 'live' && !loading && total === 0;
+  const showLiveEmpty = tab === 'live' && !loading && allTotal === 0;
 
   return (
     <div className="pb-safe">
@@ -274,10 +281,10 @@ export function HomeScreen() {
         />
       </header>
 
-      <FollowingMatches />
+      <FollowingMatches onlyLive={tab === 'live'} onLiveShown={setFollowedLive} />
 
       <p className="py-3 text-center text-sm font-bold text-ink">
-        {tab === 'live' && total > 0 ? 'Destaques' : 'Todos Jogos'}
+        {tab === 'live' && allTotal > 0 ? 'Destaques' : 'Todos Jogos'}
         {total > 0 && (
           <span className="font-normal text-faint">
             {' '}

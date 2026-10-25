@@ -12,7 +12,7 @@ import { useFollows } from '@/hooks/useFollows';
 import { useInterval } from '@/hooks/useInterval';
 import { usePushSupport } from '@/hooks/usePushSupport';
 import { followingEndpoint } from '@/lib/follows';
-import { isLiveMatch, matchKey } from '@/lib/matches';
+import { getEspnMatchId, isLiveMatch, matchKey } from '@/lib/matches';
 import { matchHref } from '@/lib/routes';
 import { asArray, type Match } from '@/lib/types';
 
@@ -75,13 +75,24 @@ function AccountInvite() {
 // "Meus jogos" no topo da tela inicial: os jogos de HOJE dos times, ligas e jogos seguidos
 // (/matches/following, mais os que estão em andamento), em "Ao vivo agora" e "Hoje".
 // Sem jogo hoje a seção some. Só onde dá para seguir (notificações disponíveis)
-export function FollowingMatches() {
+type Props = {
+  /** Aba Ao vivo: só os jogos que estão rolando */
+  onlyLive?: boolean;
+  /** IDs da ESPN dos jogos ao vivo mostrados aqui (a lista de baixo não repete) */
+  onLiveShown?: (ids: string[]) => void;
+};
+
+export function FollowingMatches({ onlyLive = false, onLiveShown }: Props) {
   const support = usePushSupport();
   const follows = useFollows();
   const endpoint = followingEndpoint(follows);
   const { data, refresh } = useApi(support === 'ok' ? endpoint : null, { parse });
   const [expanded, setExpanded] = useState(false);
-  const matches = useMemo(() => data ?? [], [data]);
+  const matches = useMemo(() => (onlyLive ? (data ?? []).filter(isLiveMatch) : (data ?? [])), [data, onlyLive]);
+  const liveIds = matches.filter(isLiveMatch).map(getEspnMatchId).filter(Boolean).join(',');
+  useEffect(() => {
+    onLiveShown?.(liveIds ? liveIds.split(',') : []);
+  }, [liveIds, onLiveShown]);
   const hasLive = matches.some(isLiveMatch);
 
   useInterval(() => refresh(), endpoint && support === 'ok' ? (hasLive ? LIVE_REFRESH_MS : IDLE_REFRESH_MS) : null, { runOnReturn: hasLive });

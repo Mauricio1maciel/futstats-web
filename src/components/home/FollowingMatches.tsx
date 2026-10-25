@@ -9,14 +9,15 @@ import { Crest } from '@/components/ui/Crest';
 import { useApi } from '@/hooks/useApi';
 import { useFollows } from '@/hooks/useFollows';
 import { useInterval } from '@/hooks/useInterval';
-import { useOnSignal } from '@/hooks/useOnSignal';
 import { usePushSupport } from '@/hooks/usePushSupport';
 import { followingEndpoint } from '@/lib/follows';
 import { isLiveMatch, matchKey } from '@/lib/matches';
 import { matchHref } from '@/lib/routes';
 import { asArray, type Match } from '@/lib/types';
 
-const LIVE_REFRESH_MS = 30000;
+// 15 s com jogo ao vivo; sem, a cada 60 s (para pegar o jogo que começar)
+const LIVE_REFRESH_MS = 15000;
+const IDLE_REFRESH_MS = 60000;
 // Seguir uma liga pode trazer a rodada inteira no mesmo dia: fechada, a seção mostra só estes
 const COLLAPSED_COUNT = 6;
 
@@ -34,7 +35,7 @@ function Header() {
 // "Meus jogos" no topo da tela inicial: os jogos de HOJE dos times, ligas e jogos seguidos
 // (/matches/following, mais os que estão em andamento), em "Ao vivo agora" e "Hoje".
 // Sem jogo hoje a seção some. Só onde dá para seguir (notificações disponíveis)
-export function FollowingMatches({ refreshSignal = 0 }: { refreshSignal?: number }) {
+export function FollowingMatches() {
   const support = usePushSupport();
   const follows = useFollows();
   const endpoint = followingEndpoint(follows);
@@ -43,10 +44,7 @@ export function FollowingMatches({ refreshSignal = 0 }: { refreshSignal?: number
   const matches = useMemo(() => data ?? [], [data]);
   const hasLive = matches.some(isLiveMatch);
 
-  useOnSignal(refreshSignal, () => {
-    if (endpoint) refresh();
-  });
-  useInterval(() => refresh(), hasLive ? LIVE_REFRESH_MS : null);
+  useInterval(() => refresh(), endpoint && support === 'ok' ? (hasLive ? LIVE_REFRESH_MS : IDLE_REFRESH_MS) : null, { runOnReturn: hasLive });
 
   // Ao vivo primeiro; fechada, até COLLAPSED_COUNT jogos (todos os ao vivo sempre aparecem)
   const groups = useMemo(() => {

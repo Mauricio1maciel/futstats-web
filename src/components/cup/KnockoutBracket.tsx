@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { getBracketRounds, getLeague, type BracketSlot } from '@/config/leagues';
-import { Crest } from '@/components/ui/Crest';
+import { TeamCrest } from '@/components/ui/TeamCrest';
 import { RefreshBar } from '@/components/ui/RefreshBar';
 import { ErrorState, InfoCard } from '@/components/ui/States';
 import { useApiMany } from '@/hooks/useApiMany';
@@ -35,7 +35,7 @@ function TeamLine({ match, side }: { match: Match; side: 'home' | 'away' }) {
   const penalty = side === 'home' ? match.home_penalty : match.away_penalty;
   return (
     <div className="flex items-center py-1">
-      <Crest src={side === 'home' ? match.home_logo : match.away_logo} size={18} className="mr-2" />
+      <TeamCrest uri={side === 'home' ? match.home_logo : match.away_logo} name={name} size={18} className="mr-2" />
       <span className="flex min-w-0 flex-1 items-center">
         <span className={`truncate text-[11px] ${winner ? 'font-bold text-white' : 'text-ink-2'}`}>{teamDisplayName(name)}</span>
         {winner && <span className="ml-1 shrink-0 text-[11px] font-bold text-gold">*</span>}

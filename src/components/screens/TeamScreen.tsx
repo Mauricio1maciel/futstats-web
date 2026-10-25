@@ -10,7 +10,7 @@ import { TeamMatchesTab } from '@/components/team/TeamMatchesTab';
 import { TeamSquadTab } from '@/components/team/TeamSquadTab';
 import { TeamStandingsTab } from '@/components/team/TeamStandingsTab';
 import { TeamStatsTab } from '@/components/team/TeamStatsTab';
-import { Crest } from '@/components/ui/Crest';
+import { TeamCrest } from '@/components/ui/TeamCrest';
 import { LazyPanel } from '@/components/ui/LazyPanel';
 import { Pills, UnderlineTabs } from '@/components/ui/Pills';
 import { NotFoundState } from '@/components/ui/ScreenFallback';
@@ -87,7 +87,7 @@ function TeamScreen({ id }: { id: string }) {
       <div className="flex flex-col items-center px-5 pb-4">
         {crest || name ? (
           <>
-            <Crest src={crest} size={60} alt={name} />
+            <TeamCrest uri={crest} name={name} size={60} />
             <h1 className="mt-2 text-center text-[22px] font-bold text-white">{name || ' '}</h1>
             {details.loading && !team ? (
               <Skeleton className="mt-1.5 h-3 w-28" />

@@ -4,7 +4,7 @@ import { ArrowDown, ArrowUp, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { ResultBadge } from '@/components/match/MatchRow';
-import { Crest } from '@/components/ui/Crest';
+import { TeamCrest } from '@/components/ui/TeamCrest';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState, ErrorState } from '@/components/ui/States';
 import { useApi } from '@/hooks/useApi';
@@ -116,7 +116,7 @@ function LastMatchRow({ line }: { line: PlayerMatchLine }) {
         <span className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="flex min-w-0 items-center gap-2">
             <span className="shrink-0 text-[11px] text-faint">{line.home ? 'vs' : 'em'}</span>
-            <Crest src={line.opponent.crest_url} size={18} name={line.opponent.name} />
+            <TeamCrest uri={line.opponent.crest_url} name={line.opponent.name} size={18} />
             <span className="truncate text-[13px] text-ink">{line.opponent.name}</span>
           </span>
           <MatchActions line={line} />
@@ -174,7 +174,7 @@ export function PlayerStatsSection({ playerId }: { playerId: string }) {
                 <span className="block truncate text-[13px] font-semibold text-ink">{c.league_name}</span>
                 {Number(c.team.id) > 0 ? (
                   <Link href={teamHref(c.team.id)} className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
-                    <Crest src={c.team.crest_url} size={14} name={c.team.name} />
+                    <TeamCrest uri={c.team.crest_url} name={c.team.name} size={14} />
                     <span className="truncate">{c.team.name}</span>
                     <span className="shrink-0 text-faint">· {c.season}</span>
                   </Link>

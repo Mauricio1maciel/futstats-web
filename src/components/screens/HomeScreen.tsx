@@ -29,7 +29,10 @@ import { asArray, type Match } from '@/lib/types';
 
 type Tab = 'live' | 'all';
 
-const LIVE_REFRESH_MS = 30000;
+// Aba Ao vivo: 15 s com jogo rolando (a API guarda o ao vivo por 15 s e responde 304 se nada mudou);
+// sem jogo, a cada 60 s, só para ver se algum começou
+const LIVE_REFRESH_MS = 15000;
+const IDLE_REFRESH_MS = 60000;
 const ADMIN_TAPS = 7;
 
 type LeagueGroup = { code: string; name: string; logo: string; title: string; matches: Match[] };
@@ -105,8 +108,6 @@ export function HomeScreen() {
   const [failed, setFailed] = useState(false);
   const [loadingPrev, setLoadingPrev] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
-  // "Meus jogos" recarrega junto com as atualizações de fundo da tela (a primeira carga ele faz sozinho)
-  const [followingSignal, setFollowingSignal] = useState(0);
   const generation = useRef(0);
   const busy = useRef(false);
   const taps = useRef({ count: 0, timer: undefined as ReturnType<typeof setTimeout> | undefined });
@@ -124,8 +125,6 @@ export function HomeScreen() {
     async (silent = false) => {
       if (!favorites) return;
       const gen = ++generation.current;
-      // Atualização de fundo (ao vivo a cada 30 s): Meus jogos vem junto
-      if (silent) setFollowingSignal(n => n + 1);
       const key = `${tab}|${selectedDate}|${favorites.join(',')}`;
       if (!silent) {
         setLoading(true);
@@ -199,8 +198,10 @@ export function HomeScreen() {
   const sections = useMemo(() => dates.map(date => buildDay(date, byDate[date] || [])), [dates, byDate]);
   const total = sections.reduce((sum, day) => sum + day.groups.reduce((n, g) => n + g.matches.length, 0), 0);
 
-  // Ao vivo: atualiza a cada 30 s, só enquanto houver jogo rolando
-  useInterval(() => loadInitial(true), tab === 'live' && total > 0 && !loading ? LIVE_REFRESH_MS : null);
+  // Ao vivo: 15 s com jogo rolando, 60 s sem. Parado com a aba escondida; na volta, recarrega na hora
+  useInterval(() => loadInitial(true), tab === 'live' && !loading ? (total > 0 ? LIVE_REFRESH_MS : IDLE_REFRESH_MS) : null, {
+    runOnReturn: true,
+  });
 
   useScrollRestoration('home', !loading && favorites !== null);
 
@@ -268,7 +269,7 @@ export function HomeScreen() {
         />
       </header>
 
-      <FollowingMatches refreshSignal={followingSignal} />
+      <FollowingMatches />
 
       <p className="py-3 text-center text-sm font-bold text-ink">
         {tab === 'live' && total > 0 ? 'Destaques' : 'Todos Jogos'}

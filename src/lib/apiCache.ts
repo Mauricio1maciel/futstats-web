@@ -38,7 +38,7 @@ export function cacheKeyFor(endpoint: string) {
 
 // Placar ao vivo guardado engana: um jogo salvo como "ao vivo" pode já ter acabado.
 // Por isso /matches/live e a classificação ao vivo (live=true) não entram na cópia local
-const isLiveEndpoint = (endpoint: string) =>
+export const isLiveEndpoint = (endpoint: string) =>
   endpoint.startsWith('/matches/live') || /[?&]live=true(&|$)/.test(endpoint);
 
 export function isCacheableEndpoint(endpoint: string) {

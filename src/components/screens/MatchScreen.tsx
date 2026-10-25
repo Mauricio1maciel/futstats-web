@@ -35,7 +35,8 @@ import { getEspnMatchId, getPhaseLabel, hasPenalties, isFinishedMatch, isLiveMat
 import { getPreview } from '@/lib/preview';
 import { asArray, type Match, type MatchHistory, type MatchPreviewData, type MatchVideo } from '@/lib/types';
 
-const LIVE_REFRESH_MS = 30000;
+// Jogo em andamento: placar e minuto a cada 15 s (a API guarda o ao vivo por 15 s; igual volta 304)
+const LIVE_REFRESH_MS = 15000;
 const VIDEOS_REFRESH_MS = 5 * 60 * 1000;
 
 type Tab = 'detalhes' | 'videos' | 'lances' | 'estatisticas' | 'escalacao' | 'confronto' | 'tabela';
@@ -236,7 +237,7 @@ function MatchScreen(params: RouteParams) {
     if (found.clock && found.clock !== 'pre') setClock(pickClock(found));
   }, [league, id]);
 
-  // Logo ao abrir (o minuto aparece na hora) e depois a cada 30 s, em paralelo com o history
+  // Logo ao abrir (o minuto aparece na hora) e depois a cada 15 s, em paralelo com o history
   useEffect(() => {
     if (live) fetchLive();
   }, [live, fetchLive]);
@@ -250,6 +251,7 @@ function MatchScreen(params: RouteParams) {
       }
     },
     live ? LIVE_REFRESH_MS : null,
+    { runOnReturn: true },
   );
 
   // Atualizar: com admin logado, force_update=true busca escalação e eventos na ESPN

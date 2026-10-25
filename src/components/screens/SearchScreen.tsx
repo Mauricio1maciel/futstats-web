@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { getLeagueName } from '@/config/leagues';
+import { TeamCrest } from '@/components/ui/TeamCrest';
 import { Crest } from '@/components/ui/Crest';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState, ErrorState } from '@/components/ui/States';
@@ -115,7 +116,7 @@ export function SearchScreen() {
                 key={`${team.api_id}-${index}`}
                 href={teamHref(team.api_id)}
                 onClick={() => setPreview('team', team.api_id, team)}
-                icon={<Crest src={team.crest_url} size={28} />}
+                icon={<TeamCrest uri={team.crest_url} name={team.name} size={28} />}
                 title={team.name}
                 subtitle={[team.league ? getLeagueName(team.league) : '', team.stadium].filter(Boolean).join(' • ') || 'Estádio não informado'}
               />

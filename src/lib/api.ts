@@ -1,4 +1,4 @@
-import { getCachedEtag, isCacheableEndpoint, readCached, saveCached } from './apiCache';
+import { cacheKeyFor, getCachedEtag, isCacheableEndpoint, isLiveEndpoint, readCached, saveCached } from './apiCache';
 import { authenticateGuest, getAdminToken, getGuestToken, logoutAdmin } from './auth';
 import { getBaseUrl } from './config';
 import { describeNetworkError, fetchWithTimeout, parseBody } from './http';
@@ -60,6 +60,20 @@ export function retryAfterSeconds(header: string | null) {
 }
 
 const rateLimitMessage = (seconds: number) => `Muitos pedidos em pouco tempo. Tente de novo em ${seconds} s.`;
+
+// Ao vivo (/matches/live, live=true): não vai para a cópia local (placar velho engana ao abrir o site),
+// mas a última resposta e a etiqueta ficam na memória da página. Assim a recarga de 15 s manda
+// If-None-Match e a resposta igual volta 304, quase sem gastar internet
+const liveMemory = new Map<string, { etag: string; data: unknown }>();
+const MAX_LIVE_MEMORY = 50;
+
+function rememberLive(endpoint: string, etag: string | null | undefined, data: unknown) {
+  const key = cacheKeyFor(endpoint);
+  liveMemory.delete(key);
+  if (!etag || data == null) return;
+  liveMemory.set(key, { etag, data });
+  if (liveMemory.size > MAX_LIVE_MEMORY) liveMemory.delete(liveMemory.keys().next().value!);
+}
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -129,6 +143,7 @@ export async function requestApi<T = unknown>(
 ): Promise<ApiResult<T> | null> {
   const isGet = (options.method || 'GET').toUpperCase() === 'GET';
   const cacheable = isGet && isCacheableEndpoint(endpoint);
+  const liveOnly = isGet && endpoint.startsWith('/') && isLiveEndpoint(endpoint);
 
   // A cópia guardada vai para a tela na hora; a rede atualiza depois
   if (cacheable && onCached) {
@@ -157,7 +172,7 @@ export async function requestApi<T = unknown>(
   }
 
   try {
-    const etag = cacheable ? getCachedEtag(endpoint) : null;
+    const etag = cacheable ? getCachedEtag(endpoint) : liveOnly ? (liveMemory.get(cacheKeyFor(endpoint))?.etag ?? null) : null;
     let result;
     try {
       result = await sendRequest(endpoint, options, guestOnly, etag);
@@ -170,6 +185,11 @@ export async function requestApi<T = unknown>(
 
     // 304: nada mudou desde a cópia guardada. Ela vale como resposta e só ganha um savedAt novo.
     // Sem a cópia (apagada nesse meio-tempo), pede de novo sem a etiqueta
+    if (result.status === 304 && liveOnly) {
+      const remembered = liveMemory.get(cacheKeyFor(endpoint));
+      if (remembered) return { status: 200, data: remembered.data as T };
+      result = await sendRequest(endpoint, options, guestOnly);
+    }
     if (result.status === 304) {
       const cached = readCached<T>(endpoint);
       if (cached) {
@@ -191,6 +211,8 @@ export async function requestApi<T = unknown>(
       const fallback = fallbackToCache(`Servidor respondeu ${result.status}`);
       if (fallback) return fallback;
     }
+
+    if (liveOnly && !result.usedAdminToken) rememberLive(endpoint, result.status === 200 ? result.etag : null, result.data);
 
     // Guarda só respostas OK de convidado (admin sempre recebe dado fresco: X-Cache BYPASS)
     if (cacheable && result.status < 400 && result.data != null && !result.usedAdminToken) {

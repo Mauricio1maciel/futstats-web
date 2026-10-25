@@ -288,3 +288,25 @@ describe('etiqueta (ETag) e 304', () => {
     expect(sent).toEqual([null]);
   });
 });
+
+describe('ao vivo: etiqueta só na memória', () => {
+  it('a recarga manda If-None-Match e o 304 devolve a última resposta, sem gravar cópia local', async () => {
+    localStorage.setItem('jwt_token', 'guest-1');
+    const sent: (string | null)[] = [];
+    let round = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: RequestInit = {}) => {
+        sent.push(new Headers(init.headers).get('If-None-Match'));
+        round++;
+        return round === 1
+          ? new Response(JSON.stringify([{ match_id: 1, clock: "35'" }]), { status: 200, headers: { 'Content-Type': 'application/json', ETag: 'W/"live1"' } })
+          : new Response(null, { status: 304 });
+      }),
+    );
+    expect(await fetchApi('/matches/live?league=MEM')).toEqual([{ match_id: 1, clock: "35'" }]);
+    expect(await fetchApi('/matches/live?league=MEM')).toEqual([{ match_id: 1, clock: "35'" }]);
+    expect(sent).toEqual([null, 'W/"live1"']);
+    expect(readCached('/matches/live?league=MEM')).toBeNull();
+  });
+});

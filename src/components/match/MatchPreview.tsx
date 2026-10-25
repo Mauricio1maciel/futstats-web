@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { isCupLeague, isTableStage } from '@/config/leagues';
 import { HangingInline, SuspendedItem } from '@/components/cards/CardParts';
 import { FormDots } from '@/components/standings/FormDots';
+import { TeamCrest } from '@/components/ui/TeamCrest';
 import { Crest } from '@/components/ui/Crest';
 import { formatGroupName, shortTeamName } from '@/lib/matches';
 import { setPreview } from '@/lib/preview';
@@ -78,7 +79,7 @@ function TeamSide({ team, align }: { team: PreviewTeam; align: 'left' | 'right' 
   return (
     <div className={`flex min-w-0 flex-1 flex-col gap-1.5 ${right ? 'items-end text-right' : 'items-start'}`}>
       <span className={`flex min-w-0 max-w-full items-center gap-2 ${right ? 'flex-row-reverse' : ''}`}>
-        <Crest src={team.crest_url} size={24} name={team.name} />
+        <TeamCrest uri={team.crest_url} name={team.name} size={24} />
         <span className="truncate text-[13px] font-bold text-ink">{shortTeamName(team.name)}</span>
       </span>
       {!!team.position && team.position > 0 && (
@@ -101,7 +102,7 @@ function Suspensions({ data }: { data: MatchPreviewData }) {
       {teams.map(team => (
         <div key={team.team_id} className="border-t border-card-2 px-4 py-3 first:border-t-0">
           <p className="flex items-center gap-2 text-[13px] font-bold text-ink">
-            <Crest src={team.crest_url} size={18} name={team.name} />
+            <TeamCrest uri={team.crest_url} name={team.name} size={18} />
             <span className="truncate">{team.name}</span>
           </p>
           {team.suspended?.length ? (

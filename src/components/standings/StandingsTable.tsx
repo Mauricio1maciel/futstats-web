@@ -3,7 +3,7 @@
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import { getZoneColor, type LegendItem } from '@/config/leagues';
-import { Crest } from '@/components/ui/Crest';
+import { TeamCrest } from '@/components/ui/TeamCrest';
 import { teamHref } from '@/lib/routes';
 import { groupStandings, isHighlighted, type TeamRef } from '@/lib/standings';
 import type { StandingRow } from '@/lib/types';
@@ -50,7 +50,7 @@ function TeamRow({ row, highlighted, showZones }: { row: StandingRow; highlighte
       style={{ borderLeft: `3px solid ${zone}` }}
     >
       <span className="w-9 shrink-0 pl-2 font-bold text-muted">{row.position}</span>
-      <Crest src={row.crest_url} size={18} />
+      <TeamCrest uri={row.crest_url} name={row.team_name} size={18} />
       <span className="ml-2.5 flex min-w-0 flex-1 items-center gap-1.5 pr-1">
         <span className={`truncate ${highlighted ? 'font-bold text-white' : 'text-ink'}`}>{row.team_name}</span>
         {row.live && <span className="h-1.5 w-1.5 shrink-0 animate-blink rounded-full bg-live" aria-label="Jogando agora" />}

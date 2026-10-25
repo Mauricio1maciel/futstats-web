@@ -3,7 +3,7 @@
 import { ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { getZoneColor, getZoneLabel, isCupLeague, ZONE_COLORS } from '@/config/leagues';
-import { Crest } from '@/components/ui/Crest';
+import { TeamCrest } from '@/components/ui/TeamCrest';
 import { RefreshBar } from '@/components/ui/RefreshBar';
 import { ErrorState } from '@/components/ui/States';
 import { useApi } from '@/hooks/useApi';
@@ -133,7 +133,7 @@ export function ChancesPanel({ league, season = '', refreshSignal = 0, onUnavail
                 >
                   <span className="w-4.5 text-center text-xs font-bold text-muted">{team.position}</span>
                   <span className="flex min-w-0 flex-1 items-center gap-1.5 pl-1">
-                    <Crest src={team.crest_url} size={20} name={team.team_name} />
+                    <TeamCrest uri={team.crest_url} name={team.team_name} size={20} />
                     <span className="truncate text-[13px] text-ink" title={team.team_name}>
                       {shortTeamName(team.team_name)}
                     </span>

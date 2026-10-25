@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { Crest } from '@/components/ui/Crest';
+import { TeamCrest } from '@/components/ui/TeamCrest';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { formatShortDate, formatTime, getMatchDate } from '@/lib/dates';
 import type { LiveClockData } from '@/lib/liveClock';
@@ -16,7 +16,7 @@ import { Score } from './Score';
 function TeamColumn({ name, logo, teamId }: { name?: string; logo?: string; teamId?: unknown }) {
   const content = (
     <>
-      <Crest src={logo} size={50} alt="" className="mb-2.5" />
+      <TeamCrest uri={logo} name={name} size={50} className="mb-2.5" />
       <span className="line-clamp-2 text-center text-[13px] font-bold leading-tight text-white">{teamDisplayName(name)}</span>
     </>
   );

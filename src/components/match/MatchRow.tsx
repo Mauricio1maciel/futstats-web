@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { Crest } from '@/components/ui/Crest';
+import { TeamCrest } from '@/components/ui/TeamCrest';
 import { LiveClock } from './LiveClock';
 import { formatShortDate, formatTime, getMatchDate } from '@/lib/dates';
 import { getEspnMatchId, getGroupBadge, getSpecialStatusLabel, isFinishedMatch, isLiveMatch, teamDisplayName } from '@/lib/matches';
@@ -94,14 +94,14 @@ export function MatchRow({ match, href, variant = 'card', showDate = false, head
         <div className={`flex items-center ${isHome ? 'px-4 py-4.5' : variant === 'embedded' ? 'px-3 py-3' : 'px-4 py-3.75'}`}>
           <div className="flex min-w-0 flex-1 items-center justify-end gap-2.5">
             {teamName(match.home_team, homeWins, 'home')}
-            <Crest src={match.home_logo} size={crestSize} />
+            <TeamCrest uri={match.home_logo} name={match.home_team} size={crestSize} />
           </div>
           <div className="flex min-w-18 flex-col items-center justify-center px-1.5">
             {center}
             {showDate && <span className="mt-1 text-[10px] text-muted">{formatShortDate(date)}</span>}
           </div>
           <div className="flex min-w-0 flex-1 items-center gap-2.5">
-            <Crest src={match.away_logo} size={crestSize} />
+            <TeamCrest uri={match.away_logo} name={match.away_team} size={crestSize} />
             {teamName(match.away_team, awayWins, 'away')}
           </div>
         </div>

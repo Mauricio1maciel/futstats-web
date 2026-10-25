@@ -47,6 +47,9 @@ export type Match = {
   clock_running?: boolean;
   /** /matches/live: 1 e 2 = tempos; 3 e 4 = prorrogação; 5 = pênaltis */
   period?: number;
+  /** /matches/live: a ESPN travou o relógio e o minuto foi estimado pelo horário marcado do início
+   * (pode estar alguns minutos adiantado): mostra com "~" */
+  clock_estimated?: boolean;
   /** Confronto encerrado empatado e sem decisão conhecida (calculado no app) */
   tie_undecided?: boolean;
   /** Fase do cadastro de onde o jogo veio (calculado na tela da liga) */

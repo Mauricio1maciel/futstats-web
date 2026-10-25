@@ -54,7 +54,7 @@ type RouteParams = {
 };
 
 // /jogo/?id=<ID da ESPN ou match_id>&league=&date=&espn_home=&espn_away=&match_id=&clock=
-// (+ clock_seconds, clock_at, clock_running e period: o relógio que anda sozinho)
+// (+ clock_seconds, clock_at, clock_running, period e clock_est: o relógio que anda sozinho)
 export function MatchRoute() {
   const query = useSearchParams();
   const get = (key: string) => query.get(key) || '';
@@ -73,6 +73,7 @@ export function MatchRoute() {
       clock_at: get('clock_at') || undefined,
       clock_running: get('clock_running') === '1',
       period: get('period') ? Number(get('period')) : undefined,
+      clock_estimated: get('clock_est') === '1',
     },
   };
   if (!params.id) return <NotFoundState />;

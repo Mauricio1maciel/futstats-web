@@ -42,5 +42,6 @@ export function matchHref(m: Match, options: { league?: string; dbMatchId?: unkn
     clock_at: m.clock_at,
     clock_running: m.clock_at ? (m.clock_running ? '1' : '0') : undefined,
     period: m.clock_at ? m.period : undefined,
+    clock_est: m.clock_at && m.clock_estimated ? '1' : undefined,
   });
 }

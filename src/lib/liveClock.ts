@@ -1,6 +1,6 @@
 import type { Match } from './types';
 
-export type LiveClockData = Pick<Match, 'clock' | 'clock_seconds' | 'clock_at' | 'clock_running' | 'period'>;
+export type LiveClockData = Pick<Match, 'clock' | 'clock_seconds' | 'clock_at' | 'clock_running' | 'period' | 'clock_estimated'>;
 
 // Minuto em que cada período acaba: passou dele, são os acréscimos ("45+2'")
 const PERIOD_END: Record<number, number> = { 1: 45, 2: 90, 3: 105, 4: 120 };
@@ -16,9 +16,16 @@ function minuteFromText(clock: string | undefined) {
 /** text: o que mostrar; nextChangeMs: quando o minuto vira (null = não muda sozinho) */
 export type LiveClockState = { text: string; nextChangeMs: number | null };
 
+// Minuto estimado pelo horário do início (a ESPN travou o relógio): "~32'". Só no minuto, não em
+// "Intervalo"/"Pênaltis"
+export function getLiveClock(match: LiveClockData, now = Date.now()): LiveClockState {
+  const state = countLiveClock(match, now);
+  return match.clock_estimated && state.text.includes("'") ? { ...state, text: `~${state.text}` } : state;
+}
+
 // O minuto do jogo agora, contado a partir da última leitura da ESPN (clock_seconds em clock_at).
 // Sem esses campos (backend antigo, ou jogo de outra lista), fica o texto da ESPN (clock)
-export function getLiveClock(match: LiveClockData, now = Date.now()): LiveClockState {
+function countLiveClock(match: LiveClockData, now: number): LiveClockState {
   const espnText = match.clock && match.clock !== 'pre' ? match.clock : '';
   const fixed = (text: string): LiveClockState => ({ text, nextChangeMs: null });
   const readAt = match.clock_at ? Date.parse(match.clock_at) : NaN;
@@ -51,6 +58,7 @@ export const pickClock = (m: LiveClockData | null | undefined): LiveClockData =>
   clock_at: m?.clock_at,
   clock_running: m?.clock_running,
   period: m?.period,
+  clock_estimated: m?.clock_estimated,
 });
 
 // A ESPN só muda o relógio de minuto em minuto, mas clock_at é renovado a cada leitura: contar a
@@ -61,7 +69,7 @@ const MAX_REMEMBERED = 200;
 
 export function anchorClock<T extends LiveClockData>(matchId: string, match: T): T {
   if (!matchId || !match.clock_at) return match;
-  const signature = [match.period, match.clock_running, match.clock_seconds, match.clock].join('|');
+  const signature = [match.period, match.clock_running, match.clock_seconds, match.clock, match.clock_estimated].join('|');
   const previous = firstSeen.get(matchId);
   if (previous?.signature === signature) {
     return Date.parse(previous.at) < Date.parse(match.clock_at) ? { ...match, clock_at: previous.at } : match;

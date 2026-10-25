@@ -69,4 +69,15 @@ describe('relógio ao vivo', () => {
       '2026-10-23T23:20:24Z',
     );
   });
+
+  it('minuto estimado (a ESPN travou o relógio) vem com "~"', () => {
+    const estimated = { clock: "26'", clock_seconds: 1560, clock_at: AT, clock_running: true, period: 1, clock_estimated: true };
+    expect(getLiveClock(estimated, at).text).toBe("~26'");
+    expect(getLiveClock(estimated, at + 6 * 60_000).text).toBe("~32'");
+    expect(getLiveClock({ ...estimated, clock_seconds: 2700 }, at + 2 * 60_000).text).toBe("~45+2'");
+    // parado no intervalo: sem "~"
+    expect(getLiveClock({ ...estimated, clock_running: false }, at).text).toBe('Intervalo');
+    // backend antigo (sem clock_at), só o texto: também com "~"
+    expect(getLiveClock({ clock: "26'", clock_estimated: true }, at).text).toBe("~26'");
+  });
 });

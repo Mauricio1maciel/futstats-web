@@ -38,6 +38,7 @@ const sameClock = (a: Props, b: Props) =>
   a.match.clock_seconds === b.match.clock_seconds &&
   a.match.clock_at === b.match.clock_at &&
   a.match.clock_running === b.match.clock_running &&
-  a.match.period === b.match.period;
+  a.match.period === b.match.period &&
+  a.match.clock_estimated === b.match.clock_estimated;
 
 export const LiveClock = memo(LiveClockView, sameClock);

@@ -27,11 +27,11 @@ export function CardCounts({ player }: { player: CardPlayer }) {
   );
 }
 
-// Motivo da suspensão, na cor do cartão: "3º amarelo" em amarelo; "cartão vermelho" e "segundo
-// amarelo" (expulsão) em vermelho
+// Motivo da suspensão, na cor do cartão: vermelho só no "cartão vermelho"; "3º amarelo" e
+// "segundo amarelo" em amarelo (em vermelho, o segundo amarelo parecia um vermelho direto)
 export function ReasonBadge({ reason }: { reason?: string }) {
   if (!reason) return null;
-  const red = /vermelho|segundo amarelo/i.test(reason);
+  const red = /vermelho/i.test(reason);
   return (
     <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${red ? 'bg-live/15 text-live' : 'bg-gold/15 text-gold'}`}>
       {red ? <RedCard /> : <YellowCard />}

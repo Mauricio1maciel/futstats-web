@@ -292,15 +292,16 @@ function MatchScreen(params: RouteParams) {
   }
 
   const hasStandings = hasStandingsTable(league);
-  // Ordem pedida: Detalhes, Escalação, Estatísticas, Classificação; depois Vídeos, Lance a lance e Confronto
+  // Ordem pedida: Detalhes, Escalação, Estatísticas, Classificação; depois Lance a lance, Confronto e,
+  // por último, Vídeos
   const tabs: { value: Tab; label: string }[] = [
     { value: 'detalhes', label: 'Detalhes' },
     { value: 'escalacao', label: 'Escalação' },
     { value: 'estatisticas', label: 'Estatísticas' },
     ...(hasStandings ? [{ value: 'tabela' as const, label: isCupLeague(league) ? getTableLabel(league) : 'Classificação' }] : []),
-    ...(videos.length > 0 ? [{ value: 'videos' as const, label: 'Vídeos' }] : []),
     ...(hasEspnId && !commentaryOff ? [{ value: 'lances' as const, label: 'Lance a lance' }] : []),
     { value: 'confronto', label: 'Confronto' },
+    ...(videos.length > 0 ? [{ value: 'videos' as const, label: 'Vídeos' }] : []),
   ];
 
   const activeTab = tabs.some(t => t.value === tab) ? tab : 'detalhes';

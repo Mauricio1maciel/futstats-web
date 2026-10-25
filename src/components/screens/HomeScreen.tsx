@@ -281,7 +281,10 @@ export function HomeScreen() {
         />
       </header>
 
-      <FollowingMatches onlyLive={tab === 'live'} onLiveShown={setFollowedLive} />
+      {/* Meus jogos é do dia de hoje: some quando a lista mostra outro dia (calendário ou "Ver dia anterior") */}
+      {(tab === 'live' || (selectedDate === todayKey() && !dates.some(date => date < todayKey()))) && (
+        <FollowingMatches onlyLive={tab === 'live'} onLiveShown={setFollowedLive} />
+      )}
 
       <p className="py-3 text-center text-sm font-bold text-ink">
         {tab === 'live' && allTotal > 0 ? 'Destaques' : 'Todos Jogos'}

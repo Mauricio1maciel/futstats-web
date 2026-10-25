@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { refreshAccount } from '@/lib/account';
 import { refreshWebPush } from '@/lib/webPush';
 
 // Ao abrir o site com as notificações ativadas: a inscrição do navegador pode ter mudado,
@@ -8,6 +9,8 @@ import { refreshWebPush } from '@/lib/webPush';
 export function PushBootstrap() {
   useEffect(() => {
     refreshWebPush();
+    // Logado: troca o token da conta por um novo (401 = expirou: volta ao convidado)
+    refreshAccount();
   }, []);
   return null;
 }

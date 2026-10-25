@@ -1,11 +1,12 @@
 'use client';
 
-import { ChevronDown, ChevronUp, Search, Star } from 'lucide-react';
+import { ChevronDown, ChevronUp, Cloud, Search, Star, X } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getLeagueName } from '@/config/leagues';
 import { MatchRow } from '@/components/match/MatchRow';
 import { Crest } from '@/components/ui/Crest';
+import { useAccount } from '@/hooks/useAccount';
 import { useApi } from '@/hooks/useApi';
 import { useFollows } from '@/hooks/useFollows';
 import { useInterval } from '@/hooks/useInterval';
@@ -29,6 +30,45 @@ function Header() {
     <h2 className="flex items-center gap-2 px-2.5 pb-2 pt-4 text-[13px] font-bold text-ink">
       <Star size={15} className="fill-gold-2 text-gold-2" /> Meus jogos
     </h2>
+  );
+}
+
+const INVITE_KEY = 'account_invite_dismissed';
+
+// Convite discreto para criar conta, depois que a pessoa segue algo (fecha de vez no X)
+function AccountInvite() {
+  const account = useAccount();
+  const [dismissed, setDismissed] = useState(true);
+  useEffect(() => {
+    try {
+      setDismissed(localStorage.getItem(INVITE_KEY) === '1');
+    } catch {
+      setDismissed(false);
+    }
+  }, []);
+  if (account || dismissed) return null;
+  return (
+    <p className="mx-0.5 mt-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-muted">
+      <Cloud size={14} className="shrink-0 text-accent" />
+      <Link href="/conta/" className="min-w-0 flex-1">
+        Salve seus times em todos os aparelhos · <span className="font-bold text-accent">Entrar</span>
+      </Link>
+      <button
+        type="button"
+        aria-label="Fechar convite"
+        onClick={() => {
+          setDismissed(true);
+          try {
+            localStorage.setItem(INVITE_KEY, '1');
+          } catch {
+            // sem armazenamento: some só nesta visita
+          }
+        }}
+        className="-m-1 p-1 text-faint"
+      >
+        <X size={14} />
+      </button>
+    </p>
   );
 }
 
@@ -75,8 +115,14 @@ export function FollowingMatches() {
     );
   }
 
-  // Sem jogo hoje (ou ainda sem resposta nem cópia guardada): nada, para não piscar
-  if (matches.length === 0) return null;
+  // Sem jogo hoje (ou ainda sem resposta nem cópia guardada): só o convite de conta, se couber
+  if (matches.length === 0) {
+    return (
+      <div className="px-2.5 pt-2">
+        <AccountInvite />
+      </div>
+    );
+  }
 
   return (
     <section className="px-2.5">
@@ -117,6 +163,7 @@ export function FollowingMatches() {
           )}
         </button>
       )}
+      <AccountInvite />
     </section>
   );
 }

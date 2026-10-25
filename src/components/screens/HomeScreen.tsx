@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, CalendarDays, ChevronRight, ChevronUp, Loader2, Search, ShieldCheck, SlidersHorizontal, Trophy, Tv } from 'lucide-react';
+import { ArrowRight, CalendarDays, ChevronRight, ChevronUp, CircleUserRound, Loader2, Search, ShieldCheck, SlidersHorizontal, Trophy, Tv } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState, OutlineButton } from '@/components/ui/States';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useInterval } from '@/hooks/useInterval';
+import { useAccount } from '@/hooks/useAccount';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useRememberedState, useScreenMemory } from '@/hooks/useScreenMemory';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
@@ -93,6 +94,7 @@ function buildDay(date: string, matches: Match[]): DaySection {
 export function HomeScreen() {
   const router = useRouter();
   const isAdmin = useIsAdmin();
+  const account = useAccount();
   const memory = useScreenMemory('home');
 
   const [tab, setTab] = useRememberedState<Tab>(memory, 'tab', 'live');
@@ -252,8 +254,11 @@ export function HomeScreen() {
             <Link href="/minhas-ligas/" aria-label="Minhas ligas" className="rounded-full p-2 text-ink active:bg-white/10">
               <SlidersHorizontal size={22} />
             </Link>
-            <Link href="/busca/" aria-label="Buscar" className="-mr-2 rounded-full p-2 text-ink active:bg-white/10">
+            <Link href="/busca/" aria-label="Buscar" className="rounded-full p-2 text-ink active:bg-white/10">
               <Search size={23} />
+            </Link>
+            <Link href="/conta/" aria-label={account ? 'Minha conta' : 'Entrar'} className="-mr-2 rounded-full p-2 text-ink active:bg-white/10">
+              <CircleUserRound size={23} className={account ? 'text-accent' : ''} />
             </Link>
           </div>
         </div>

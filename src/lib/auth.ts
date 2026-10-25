@@ -117,3 +117,47 @@ export function logoutAdmin() {
   storageRemove(ADMIN_TOKEN_KEY);
   emitAdmin();
 }
+
+// =========================================================================
+// Conta de usuário (e-mail + senha). Guarda só o token e os dados da conta, nunca a senha.
+// O token de convidado continua guardado: é para ele que se volta ao sair
+// =========================================================================
+
+const ACCOUNT_TOKEN_KEY = 'account_token';
+const ACCOUNT_USER_KEY = 'account_user';
+
+export type AccountUser = { id: number; email: string; display_name?: string; role?: string };
+export type AccountSession = { token: string; user: AccountUser };
+
+export const getAccountToken = () => storageGet(ACCOUNT_TOKEN_KEY);
+
+export function getAccountUser(): AccountUser | null {
+  try {
+    return JSON.parse(storageGet(ACCOUNT_USER_KEY) || 'null') as AccountUser | null;
+  } catch {
+    return null;
+  }
+}
+
+const accountListeners = new Set<(renew: boolean) => void>();
+
+/** Avisado a cada troca de token. renew = só renovou (refresh, /me): a conta é a mesma */
+export function subscribeAccount(listener: (renew: boolean) => void) {
+  accountListeners.add(listener);
+  return () => {
+    accountListeners.delete(listener);
+  };
+}
+
+// A ÚNICA função que troca o token da conta. session null = volta ao convidado.
+// renew: só renovou o token ou os dados (refresh, /me): quem depende da conta não recarrega
+export function switchAccountToken(session: AccountSession | null, { renew = false } = {}) {
+  if (session) {
+    storageSet(ACCOUNT_TOKEN_KEY, session.token);
+    storageSet(ACCOUNT_USER_KEY, JSON.stringify(session.user));
+  } else {
+    storageRemove(ACCOUNT_TOKEN_KEY);
+    storageRemove(ACCOUNT_USER_KEY);
+  }
+  accountListeners.forEach(listener => listener(renew));
+}

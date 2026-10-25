@@ -1,10 +1,11 @@
 // Seguir times, ligas e jogos para receber avisos (push). Funciona na web pelo
 // lib/webPush.ts (Web Push). Regras do app (docs/API.md, "Notificações push"):
-// - sempre com o token de convidado (é o device_id que identifica o aparelho);
+// - sem o token de admin: com conta, as inscrições são da conta; sem, do aparelho (convidado);
 // - a estrela muda na hora e desfaz se a API falhar;
 // - 409 = aparelho ainda não registrado: registra e repete;
 // - tipos de aviso por inscrição: lista vazia não existe (vira "deixar de seguir").
 import { buildEndpoint, requestApi } from './api';
+import { getAccountToken, subscribeAccount } from './auth';
 import { storageGet, storageSet } from './storage';
 import { showToast } from './toast';
 import { enableErrorMessage, enableWebPush, enableWebPushDetailed, isWebPushEnabled } from './webPush';
@@ -119,7 +120,8 @@ const markLoaded = () => {
 };
 
 export async function loadFollows() {
-  if (!isWebPushEnabled()) return markLoaded();
+  // Com conta, o que ela segue vale mesmo sem as notificações ligadas neste navegador
+  if (!isWebPushEnabled() && !getAccountToken()) return markLoaded();
   const result = await requestApi<Record<string, unknown>>('/push/subscriptions', {}, { guestOnly: true });
   if (result?.status === 200 && result.data) {
     follows = normalize(result.data);
@@ -222,4 +224,14 @@ export async function saveKinds(target: FollowTarget, kinds: string[]) {
 export function clearFollows() {
   follows = { ...EMPTY, loaded: true };
   emit();
+}
+
+// Entrou, saiu ou a conta expirou: o que se segue é outro. Limpa e busca de novo com o token atual
+if (typeof window !== 'undefined') {
+  subscribeAccount(renew => {
+    if (renew) return;
+    follows = EMPTY;
+    emit();
+    loadFollows();
+  });
 }

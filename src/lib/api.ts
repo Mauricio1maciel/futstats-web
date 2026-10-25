@@ -1,5 +1,5 @@
 import { cacheKeyFor, getCachedEtag, isCacheableEndpoint, isLiveEndpoint, readCached, saveCached } from './apiCache';
-import { authenticateGuest, getAdminToken, getGuestToken, logoutAdmin } from './auth';
+import { authenticateGuest, getAccountToken, getAdminToken, getGuestToken, logoutAdmin, switchAccountToken } from './auth';
 import { getBaseUrl } from './config';
 import { describeNetworkError, fetchWithTimeout, parseBody } from './http';
 import { reportNetworkError } from './networkErrors';
@@ -11,7 +11,7 @@ export const RETRY_DELAY_MS = 1500;
 export type ApiResult<T = unknown> = { status: number; data: T | null; fromCache?: boolean; savedAt?: number };
 
 export type ApiExtraOptions<T = unknown> = {
-  /** Usa sempre o token de convidado, mesmo com admin logado (as rotas /push exigem isso) */
+  /** Sem o token de admin (as rotas /push): usa o da conta, ou o de convidado */
   guestOnly?: boolean;
   /**
    * GET: "mostra o que tem e atualiza por trás". Se houver cópia guardada, ela é entregue aqui
@@ -85,9 +85,11 @@ async function sendRequest(endpoint: string, options: RequestInit, guestOnly: bo
   const baseUrl = getBaseUrl();
   const url = `${baseUrl}${endpoint}`;
 
-  // Admin logado: o token de admin vale em todas as rotas. Senão, o de convidado
+  // Admin logado: o token de admin vale em todas as rotas (menos as /push). Depois, o da conta
+  // (as /push gravam na conta); sem conta, o de convidado
   const adminToken = guestOnly ? null : getAdminToken();
-  let token = adminToken || getGuestToken() || (await authenticateGuest(baseUrl));
+  const accountToken = adminToken ? null : getAccountToken();
+  let token = adminToken || accountToken || getGuestToken() || (await authenticateGuest(baseUrl));
 
   const headers = new Headers(options.headers);
   if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
@@ -109,6 +111,14 @@ async function sendRequest(endpoint: string, options: RequestInit, guestOnly: bo
       usedAdminToken = false;
       headers.delete('If-None-Match');
       showToast('Sessão de admin expirada', 'Faça login de novo para usar o modo admin.');
+      token = getGuestToken() || (await authenticateGuest(baseUrl));
+    } else if (accountToken && rejected === accountToken) {
+      // Conta expirada ou apagada: volta ao convidado
+      if (getAccountToken() === accountToken) {
+        switchAccountToken(null);
+        showToast('Sua sessão expirou', 'Entre de novo para usar sua conta.');
+      }
+      headers.delete('If-None-Match');
       token = getGuestToken() || (await authenticateGuest(baseUrl));
     } else {
       // Outra requisição já pode ter renovado o token enquanto esta esperava

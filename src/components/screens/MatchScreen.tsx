@@ -292,15 +292,17 @@ function MatchScreen(params: RouteParams) {
   }
 
   const hasStandings = hasStandingsTable(league);
+  // Ordem pedida: Detalhes, Escalação, Estatísticas, Classificação; depois Vídeos, Lance a lance e Confronto
   const tabs: { value: Tab; label: string }[] = [
     { value: 'detalhes', label: 'Detalhes' },
+    { value: 'escalacao', label: 'Escalação' },
+    { value: 'estatisticas', label: 'Estatísticas' },
+    ...(hasStandings ? [{ value: 'tabela' as const, label: isCupLeague(league) ? getTableLabel(league) : 'Classificação' }] : []),
     ...(videos.length > 0 ? [{ value: 'videos' as const, label: 'Vídeos' }] : []),
     ...(hasEspnId && !commentaryOff ? [{ value: 'lances' as const, label: 'Lance a lance' }] : []),
-    { value: 'estatisticas', label: 'Estatísticas' },
-    { value: 'escalacao', label: 'Escalação' },
     { value: 'confronto', label: 'Confronto' },
-    ...(hasStandings ? [{ value: 'tabela' as const, label: isCupLeague(league) ? getTableLabel(league) : 'Classificação' }] : []),
   ];
+
   const activeTab = tabs.some(t => t.value === tab) ? tab : 'detalhes';
   const phase = preview || fallback ? getPhaseLabel(mergeDefined<Match>({ league }, preview, fallback)) : '';
   const waiting = loading && !history;

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { isCupLeague, isTableStage } from '@/config/leagues';
-import { CardPlayerName, ReasonBadge, YellowCard } from '@/components/cards/CardParts';
+import { HangingInline, SuspendedItem } from '@/components/cards/CardParts';
 import { FormDots } from '@/components/standings/FormDots';
 import { Crest } from '@/components/ui/Crest';
 import { formatGroupName, shortTeamName } from '@/lib/matches';
@@ -107,27 +107,15 @@ function Suspensions({ data }: { data: MatchPreviewData }) {
           {team.suspended?.length ? (
             <ul className="mt-2 space-y-1.5">
               {team.suspended.map((p, index) => (
-                <li key={`${p.espn_player_id ?? p.name}-${index}`} className="flex items-center gap-2">
-                  <CardPlayerName player={p} teamName={team.name} className="flex-1 text-sm text-white" />
-                  <ReasonBadge reason={p.reason} />
+                <li key={`${p.espn_player_id ?? p.name}-${index}`}>
+                  <SuspendedItem player={p} teamName={team.name} nameClassName="text-sm text-white" />
                 </li>
               ))}
             </ul>
           ) : (
             <p className="mt-1.5 text-[13px] text-muted">Nenhum suspenso.</p>
           )}
-          {team.hanging?.length > 0 && (
-            <p className="mt-2 flex flex-wrap items-center gap-x-1 text-xs text-muted">
-              <YellowCard />
-              <span className="font-bold text-faint">Pendurados:</span>
-              {team.hanging.map((p, index) => (
-                <span key={`${p.espn_player_id ?? p.name}-${index}`} className="inline-flex">
-                  <CardPlayerName player={p} teamName={team.name} />
-                  {index < team.hanging.length - 1 ? ',' : ''}
-                </span>
-              ))}
-            </p>
-          )}
+          <HangingInline players={team.hanging ?? []} teamName={team.name} />
         </div>
       ))}
     </Card>

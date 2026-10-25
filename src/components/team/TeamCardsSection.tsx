@@ -3,11 +3,13 @@
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { getLeague, getLeagueName } from '@/config/leagues';
-import { CardCounts, CardPlayerName, INCOMPLETE_NOTE, ReasonBadge } from '@/components/cards/CardParts';
+import { CardCounts, CardPlayerName, INCOMPLETE_NOTE, SuspendedItem } from '@/components/cards/CardParts';
 import { useApi } from '@/hooks/useApi';
 import { useOnSignal } from '@/hooks/useOnSignal';
 import { buildEndpoint } from '@/lib/api';
+import { hangingDetail } from '@/lib/cards';
 import { formatShortDate, parseMatchDate } from '@/lib/dates';
+import { getStageLabel } from '@/lib/matches';
 import type { TeamCards } from '@/lib/types';
 
 const COLLAPSED_PLAYERS = 8;
@@ -16,11 +18,12 @@ function Subtitle({ children }: { children: ReactNode }) {
   return <h4 className="px-4 pb-1.5 pt-4 text-[11px] font-bold uppercase tracking-wider text-faint">{children}</h4>;
 }
 
-// "contra RB Bragantino (em casa, 24/10)"
+// "contra RB Bragantino (em casa, 24/10)"; em mata-mata, com a fase ("..., Semifinal")
 export function nextMatchText(next: TeamCards['next_match']) {
   if (!next) return '';
   const date = formatShortDate(parseMatchDate(next.date));
-  return `contra ${next.opponent} (${next.home ? 'em casa' : 'fora'}${date ? `, ${date}` : ''})`;
+  const stage = getStageLabel(next.stage);
+  return `contra ${next.opponent} (${[next.home ? 'em casa' : 'fora', date, stage].filter(Boolean).join(', ')})`;
 }
 
 // Cartões do time numa competição (/team/cards): suspensos, pendurados e todos com cartão.
@@ -50,9 +53,8 @@ export function TeamCardsSection({ teamId, league, teamName, refreshSignal = 0 }
       {data.suspended?.length ? (
         <ul>
           {data.suspended.map((p, index) => (
-            <li key={`${p.espn_player_id ?? p.name}-${index}`} className="flex items-center gap-2 px-4 py-2">
-              <CardPlayerName player={p} teamName={teamName} className="flex-1 text-sm text-ink" />
-              <ReasonBadge reason={p.reason} />
+            <li key={`${p.espn_player_id ?? p.name}-${index}`} className="px-4 py-2">
+              <SuspendedItem player={p} teamName={teamName} />
             </li>
           ))}
         </ul>
@@ -64,9 +66,12 @@ export function TeamCardsSection({ teamId, league, teamName, refreshSignal = 0 }
       {data.hanging?.length ? (
         <ul>
           {data.hanging.map((p, index) => (
-            <li key={`${p.espn_player_id ?? p.name}-${index}`} className="flex items-center gap-2 px-4 py-2">
-              <CardPlayerName player={p} teamName={teamName} className="flex-1 text-sm text-ink" />
-              <CardCounts player={p} />
+            <li key={`${p.espn_player_id ?? p.name}-${index}`} className="px-4 py-2">
+              <span className="flex items-center gap-2">
+                <CardPlayerName player={p} teamName={teamName} className="flex-1 text-sm text-ink" />
+                <CardCounts player={p} />
+              </span>
+              {hangingDetail(p) && <span className="mt-0.5 block text-right text-[11px] text-gold">{hangingDetail(p)}</span>}
             </li>
           ))}
         </ul>
@@ -105,11 +110,11 @@ export function TeamCardsSection({ teamId, league, teamName, refreshSignal = 0 }
         </>
       )}
 
-      <p className="border-t border-card-2 px-4 py-2.5 text-[11px] text-faint">
-        O {data.yellows_for_suspension}º amarelo (e o {data.yellows_for_suspension * 2}º, o {data.yellows_for_suspension * 3}º...) e o cartão vermelho
-        tiram o jogador do jogo seguinte. Não inclui ganchos do STJD.
-        {data.matches_without_data > 0 && <span className="mt-1 block text-gold">{INCOMPLETE_NOTE}</span>}
-      </p>
+      <div className="space-y-1 border-t border-card-2 px-4 py-2.5 text-[11px] text-faint">
+        {data.rule && <p>Regra: {data.rule}</p>}
+        {data.note && <p className="text-gold/90">{data.note.charAt(0).toUpperCase() + data.note.slice(1)}</p>}
+        {data.matches_without_data > 0 && <p className="text-gold/90">{INCOMPLETE_NOTE}</p>}
+      </div>
     </section>
   );
 }

@@ -298,27 +298,39 @@ export type StandingsChances = {
   teams: ChancesTeam[];
 };
 
-// /team/cards: pendurados e suspensos do time (Séries A e B)
+// /team/cards: pendurados e suspensos do time, com a regra de cada competição
 export type CardPlayer = {
   name: string;
   espn_player_id?: number;
-  /** Só os amarelos que valem para o acúmulo */
+  /** Os amarelos que contam para a suspensão (desde o último zeramento) */
   yellow_cards: number;
+  /** Todos os amarelos na competição */
+  total_yellow_cards?: number;
   red_cards: number;
   status?: 'suspended' | 'hanging' | string;
-  /** "3º amarelo", "6º amarelo", "cartão vermelho" */
+  /** Suspenso: "3º amarelo", "segundo amarelo" ou "cartão vermelho" */
   reason?: string;
+  /** Suspenso: jogos que ainda vai cumprir */
+  matches_banned?: number;
+  /** Vermelho direto: o tribunal costuma dar mais que o jogo automático */
+  may_be_longer?: boolean;
+  /** Pendurado: jogos de suspensão se levar o próximo amarelo */
+  ban_if_booked?: number;
 };
 
 export type TeamCards = {
   team_id: number;
   league: string;
   season: string;
+  /** A regra da competição, em texto, para mostrar (não montar a partir de yellows_for_suspension) */
+  rule?: string;
+  /** Limite dos dados, para avisar (ex: Premier League e as copas inglesas) */
+  note?: string;
   yellows_for_suspension: number;
   matches_counted: number;
   /** Jogos encerrados sem os lances da ESPN: a lista pode estar incompleta */
   matches_without_data: number;
-  next_match: { match_id: number; date: string; opponent: string; home: boolean } | null;
+  next_match: { match_id: number; date: string; opponent: string; home: boolean; stage?: string } | null;
   suspended: CardPlayer[];
   hanging: CardPlayer[];
   players: CardPlayer[];
@@ -339,7 +351,7 @@ export type PreviewTeam = {
   group_name?: string;
   /** Últimos 5 na competição, do mais antigo ao mais recente */
   form?: string;
-  /** Só Séries A e B (nas outras, vazias) */
+  /** Os mesmos do /team/cards, com a regra da competição */
   suspended: CardPlayer[];
   hanging: CardPlayer[];
   top_scorers: { player_id: number; name: string; headshot_url?: string; goals: number }[];

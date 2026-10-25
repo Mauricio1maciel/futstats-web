@@ -163,7 +163,7 @@ function CompetitionBlock({ stats }: { stats: TeamCompetitionStats }) {
 type Props = {
   teamId: string;
   refreshSignal: number;
-  /** Competições com pendurados e suspensos (Séries A e B): uma seção "Cartões" para cada */
+  /** Competições do time: uma seção "Cartões" para cada (a que não tiver regra dá 404 e some) */
   cardLeagues?: string[];
   teamName?: string;
 };

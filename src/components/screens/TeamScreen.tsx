@@ -3,7 +3,7 @@
 import { RotateCw } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { hasTeamCards, isCupLeague } from '@/config/leagues';
+import { isCupLeague } from '@/config/leagues';
 import { FollowStar } from '@/components/FollowStar';
 import { getCompetitions } from '@/components/team/Competitions';
 import { TeamMatchesTab } from '@/components/team/TeamMatchesTab';
@@ -158,7 +158,7 @@ function TeamScreen({ id }: { id: string }) {
             teamId={id}
             teamName={name}
             refreshSignal={signals.estatisticas}
-            cardLeagues={competitions.map(c => c.code).filter(hasTeamCards)}
+            cardLeagues={competitions.map(c => c.code)}
           />
         </LazyPanel>
         <LazyPanel active={mainTab === 'elenco'}>
